@@ -2,7 +2,15 @@
 
 Aplicación complementaria para Honda RoadSync. Escucha en paralelo los eventos BLE de `HONDA BTU` y permite invocar Gemini / Assistant desde un gesto configurable de la piña.
 
-<img width="939" height="2048" alt="HAB" src="https://github.com/user-attachments/assets/c4d8b6b8-b3de-4391-8aaa-a2a7d43beaf3" />
+
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/c4d8b6b8-b3de-4391-8aaa-a2a7d43beaf3"
+    alt="Honda Assist Bridge"
+    width="280">
+</p>
+
+
 
 
 ## Cambios principales de v0.4
