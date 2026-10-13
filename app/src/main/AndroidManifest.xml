@@ -3,6 +3,8 @@
 
     <!-- Package visibility is intentionally limited to launchable apps the user may select. -->
     <queries>
+        <package android:name="com.nemerpus.panas" />
+        <package android:name="com.nemerpus.panas.debug" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -23,6 +25,8 @@
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Push-to-talk into PanaS (signature permission defined by PanaS). -->
+    <uses-permission android:name="com.nemerpus.panas.permission.PUSH_TO_TALK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />

@@ -34,6 +34,12 @@ final class CommandRepository {
         AppConfig.prefs(context).edit().putString(KEY, a.toString()).apply();
     }
 
+    /** First enabled command with this action type, or null. */
+    static Command findByAction(Context context, String actionType) {
+        for (Command c : load(context)) if (c.enabled && actionType.equals(c.actionType)) return c;
+        return null;
+    }
+
     static void upsert(Context context, Command command) {
         List<Command> list = load(context); boolean found = false;
         for (int i = 0; i < list.size(); i++) if (list.get(i).id.equals(command.id)) { list.set(i, command); found = true; break; }

@@ -133,7 +133,7 @@ public class AddCommandActivity extends Activity {
         ap.setPadding(0, dp(5), 0, dp(12));
         actionCard.addView(ap);
 
-        String[] actions = {"Asistente de voz", "Abrir aplicación", "Llamar / marcador", "Abrir navegación", "Multimedia · Play/Pausa", "Multimedia · Siguiente", "Multimedia · Anterior"};
+        String[] actions = {"Asistente de voz", "Abrir aplicación", "Llamar / marcador", "Abrir navegación", "Multimedia · Play/Pausa", "Multimedia · Siguiente", "Multimedia · Anterior", "PanaS · pulsar para hablar"};
         action = new Spinner(this);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, actions);
         action.setAdapter(adapter);
@@ -166,6 +166,11 @@ public class AddCommandActivity extends Activity {
             if (command.actionType.equals(Command.ACTION_NAVIGATION) || command.actionType.equals(Command.ACTION_DIAL)) {
                 command.actionValue = value.getText().toString().trim();
             }
+            if (command.actionType.equals(Command.ACTION_PANAS_PTT)) {
+                // PTT needs press/hold semantics: only long codes (07-0A) make sense.
+                command.doublePress = false;
+                if (command.eventCode < 0x07 || command.eventCode > 0x0A) command.eventCode = 0x09;
+            }
             CommandRepository.upsert(this, command);
             HondaBleService.requestReconnect(this);
             finish();
@@ -191,7 +196,15 @@ public class AddCommandActivity extends Activity {
         if (choice == null) return;
         choice.setVisibility(View.GONE);
         value.setVisibility(View.GONE);
-        if (p == 1) {
+        if (p == 7) {
+            choice.setVisibility(View.VISIBLE);
+            boolean installed = PanasPttBridge.panasInstalled(this);
+            boolean granted = PanasPttBridge.permissionGranted(this);
+            choice.setText("🎙  Mantén pulsado el gesto largo (por defecto ← mantener) para hablar en la Ride de PanaS. "
+                    + "PanaS emite un beep al abrir el micrófono y otro al soltar.\n"
+                    + (!installed ? "⚠ PanaS no está instalada." : granted ? "✓ Permiso de PanaS concedido." : "⚠ Permiso no concedido: instala PanaS antes que Honda Assist Bridge (o reinstala esta app) y usa la misma firma."));
+            choice.setOnClickListener(null);
+        } else if (p == 1) {
             choice.setVisibility(View.VISIBLE);
             choice.setText((command.actionLabel == null || command.actionLabel.isBlank()) ? "Seleccionar aplicación\nToca para elegir entre las aplicaciones instaladas" : "📱  " + command.actionLabel + "\nToca para cambiar");
             choice.setOnClickListener(v -> pickApp());
@@ -265,6 +278,7 @@ public class AddCommandActivity extends Activity {
             case Command.ACTION_MEDIA_PLAY_PAUSE -> 4;
             case Command.ACTION_MEDIA_NEXT -> 5;
             case Command.ACTION_MEDIA_PREVIOUS -> 6;
+            case Command.ACTION_PANAS_PTT -> 7;
             default -> 0;
         };
     }
@@ -277,6 +291,7 @@ public class AddCommandActivity extends Activity {
             case 4 -> Command.ACTION_MEDIA_PLAY_PAUSE;
             case 5 -> Command.ACTION_MEDIA_NEXT;
             case 6 -> Command.ACTION_MEDIA_PREVIOUS;
+            case 7 -> Command.ACTION_PANAS_PTT;
             default -> Command.ACTION_ASSISTANT;
         };
     }

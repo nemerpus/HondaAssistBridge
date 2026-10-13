@@ -69,6 +69,7 @@ public class HondaBleService extends Service {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final CommandEngine commandEngine = new CommandEngine();
+    private PanasPttBridge pttBridge;
 
     private BluetoothGatt gatt;
     private boolean subscribed;
@@ -116,6 +117,7 @@ public class HondaBleService extends Service {
     @Override public void onCreate(){
         super.onCreate();createNotificationChannel();registerBluetoothReceiver();
         AppConfig.prefs(this).edit().putBoolean(AppConfig.KEY_SERVICE_RUNNING,true).apply();
+        pttBridge = new PanasPttBridge(this);
         FlightRecorder.log(this,"SERVICE","onCreate background · "+FlightRecorder.powerState(this));
     }
 
@@ -166,6 +168,7 @@ public class HondaBleService extends Service {
         } else {
             AppConfig.setLastStatus(this, STATE_STOPPED, "Escucha pausada");
         }
+        if (pttBridge != null) pttBridge.reset();
         FlightRecorder.log(this, "SERVICE", "onDestroy · listening=" + AppConfig.isListeningEnabled(this));
         leaveForeground();releaseWakeLock();super.onDestroy();
     }
@@ -426,6 +429,10 @@ public class HondaBleService extends Service {
         AppConfig.prefs(this).edit().putInt(AppConfig.KEY_LAST_EVENT_CODE, code).apply();
         reportEvent(raw);
 
+        if (pttBridge != null && pttBridge.onEvent(CommandRepository.findByAction(this, Command.ACTION_PANAS_PTT), code)) {
+            reportEvent("PanaS · pulsar para hablar · " + GestureEngine.hex(code));
+            return;
+        }
         Command command = commandEngine.onEvent(this, code);
         if (command != null) {
             reportEvent("Comando: " + command.name + " · " + command.gestureLabel());
@@ -439,6 +446,7 @@ public class HondaBleService extends Service {
         Log.w(TAG, reason);
         subscribed = false;
         commandEngine.reset();
+        if (pttBridge != null) pttBridge.reset();
         cancelStageTimeouts();
         closeGatt();leaveForeground();releaseWakeLock();reportStatus(STATE_ERROR,reason);
         if(AppConfig.isCompanionEnabled(this)){
