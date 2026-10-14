@@ -167,9 +167,9 @@ public class AddCommandActivity extends Activity {
                 command.actionValue = value.getText().toString().trim();
             }
             if (command.actionType.equals(Command.ACTION_PANAS_PTT)) {
-                // PTT needs press/hold semantics: only long codes (07-0A) make sense.
+                // PanaS: a tap (01-04) opens/closes the microphone; a hold (07-0A) talks while held.
                 command.doublePress = false;
-                if (command.eventCode < 0x07 || command.eventCode > 0x0A) command.eventCode = 0x09;
+                if (!PanasPttBridge.isTapCode(command.eventCode) && (command.eventCode < 0x07 || command.eventCode > 0x0A)) command.eventCode = 0x03;
             }
             CommandRepository.upsert(this, command);
             HondaBleService.requestReconnect(this);
@@ -200,10 +200,17 @@ public class AddCommandActivity extends Activity {
             choice.setVisibility(View.VISIBLE);
             boolean installed = PanasPttBridge.panasInstalled(this);
             boolean granted = PanasPttBridge.permissionGranted(this);
-            choice.setText("🎙  Mantén pulsado el gesto largo (por defecto ← mantener) para hablar en la Ride de PanaS. "
-                    + "PanaS emite un beep al abrir el micrófono y otro al soltar.\n"
+            boolean tap = PanasPttBridge.isTapCode(command.eventCode) || command.eventCode < 0x07 || command.eventCode > 0x0A;
+            choice.setText("🎙  " + (tap
+                    ? "Toque ← : un toque abre el micrófono al instante y otro toque lo cierra. Si haces doble pulsación o mantienes (Gemini), se deshace y va a Gemini. Consejo: pon Gemini en «mantener»."
+                    : "Mantener ← : hablas mientras mantienes el botón.")
+                    + " PanaS emite un pitido al abrir el micrófono y otro al cerrarlo.\nToca aquí para cambiar entre toque y mantener.\n"
                     + (!installed ? "⚠ PanaS no está instalada." : granted ? "✓ Permiso de PanaS concedido." : "⚠ Permiso no concedido: instala PanaS antes que Honda Assist Bridge (o reinstala esta app) y usa la misma firma."));
-            choice.setOnClickListener(null);
+            choice.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle("¿Cómo quieres abrir el micrófono?")
+                    .setItems(new String[]{"Toque ← · un toque abre, otro cierra", "Mantener ← · hablar mientras lo mantienes"}, (d, w) -> {
+                        command.doublePress = false; command.eventCode = w == 0 ? 0x03 : 0x09;
+                        gesture.setText(command.gestureLabel()); configureAction(7);
+                    }).setNegativeButton("Cancelar", null).show());
         } else if (p == 1) {
             choice.setVisibility(View.VISIBLE);
             choice.setText((command.actionLabel == null || command.actionLabel.isBlank()) ? "Seleccionar aplicación\nToca para elegir entre las aplicaciones instaladas" : "📱  " + command.actionLabel + "\nToca para cambiar");

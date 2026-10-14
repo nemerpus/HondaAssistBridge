@@ -117,7 +117,7 @@ public class HondaBleService extends Service {
     @Override public void onCreate(){
         super.onCreate();createNotificationChannel();registerBluetoothReceiver();
         AppConfig.prefs(this).edit().putBoolean(AppConfig.KEY_SERVICE_RUNNING,true).apply();
-        pttBridge = new PanasPttBridge(this);
+        pttBridge = new PanasPttBridge(this, this::dispatchToCommands);
         FlightRecorder.log(this,"SERVICE","onCreate background · "+FlightRecorder.powerState(this));
     }
 
@@ -433,6 +433,10 @@ public class HondaBleService extends Service {
             reportEvent("PanaS · pulsar para hablar · " + GestureEngine.hex(code));
             return;
         }
+        dispatchToCommands(code);
+    }
+
+    private void dispatchToCommands(int code) {
         Command command = commandEngine.onEvent(this, code);
         if (command != null) {
             reportEvent("Comando: " + command.name + " · " + command.gestureLabel());
