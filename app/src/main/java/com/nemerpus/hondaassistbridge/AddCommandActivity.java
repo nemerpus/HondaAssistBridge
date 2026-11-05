@@ -133,7 +133,7 @@ public class AddCommandActivity extends Activity {
         ap.setPadding(0, dp(5), 0, dp(12));
         actionCard.addView(ap);
 
-        String[] actions = {"Asistente de voz", "Abrir aplicación", "Llamar / marcador", "Abrir navegación", "Multimedia · Play/Pausa", "Multimedia · Siguiente", "Multimedia · Anterior", "PanaS · pulsar para hablar"};
+        String[] actions = {"Asistente de voz", "Abrir aplicación", "Llamar / marcador", "Abrir navegación", "Multimedia · Play/Pausa", "Multimedia · Siguiente", "Multimedia · Anterior", "PanaS · micrófono on/off"};
         action = new Spinner(this);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, actions);
         action.setAdapter(adapter);
@@ -202,12 +202,12 @@ public class AddCommandActivity extends Activity {
             boolean granted = PanasPttBridge.permissionGranted(this);
             boolean tap = PanasPttBridge.isTapCode(command.eventCode) || command.eventCode < 0x07 || command.eventCode > 0x0A;
             choice.setText("🎙  " + (tap
-                    ? "Toque ← : un toque abre el micrófono al instante y otro toque lo cierra. Si haces doble pulsación o mantienes (Gemini), se deshace y va a Gemini. Consejo: pon Gemini en «mantener»."
+                    ? "Toque ← : como un botón genérico, un toque activa el micrófono de PanaS y otro lo corta (al cortarlo la música vuelve a alta calidad). Si haces doble pulsación o mantienes (Gemini), se deshace y va a Gemini. Consejo: pon Gemini en «mantener»."
                     : "Mantener ← : hablas mientras mantienes el botón.")
-                    + " PanaS emite un pitido al abrir el micrófono y otro al cerrarlo.\nToca aquí para cambiar entre toque y mantener.\n"
+                    + " PanaS emite un pitido al activar el micrófono y dos al cortarlo.\nToca aquí para cambiar entre toque y mantener.\n"
                     + (!installed ? "⚠ PanaS no está instalada." : granted ? "✓ Permiso de PanaS concedido." : "⚠ Permiso no concedido: instala PanaS antes que Honda Assist Bridge (o reinstala esta app) y usa la misma firma."));
             choice.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle("¿Cómo quieres abrir el micrófono?")
-                    .setItems(new String[]{"Toque ← · un toque abre, otro cierra", "Mantener ← · hablar mientras lo mantienes"}, (d, w) -> {
+                    .setItems(new String[]{"Toque ← · un toque activa, otro corta", "Mantener ← · hablar mientras lo mantienes"}, (d, w) -> {
                         command.doublePress = false; command.eventCode = w == 0 ? 0x03 : 0x09;
                         gesture.setText(command.gestureLabel()); configureAction(7);
                     }).setNegativeButton("Cancelar", null).show());

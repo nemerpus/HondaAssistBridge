@@ -430,7 +430,7 @@ public class HondaBleService extends Service {
         reportEvent(raw);
 
         if (pttBridge != null && pttBridge.onEvent(CommandRepository.findByAction(this, Command.ACTION_PANAS_PTT), code)) {
-            reportEvent("PanaS · pulsar para hablar · " + GestureEngine.hex(code));
+            reportEvent("PanaS · micrófono · " + GestureEngine.hex(code));
             return;
         }
         dispatchToCommands(code);

@@ -9,10 +9,12 @@ import android.os.SystemClock;
 /**
  * Push-to-talk for PanaS from the handlebar switch. Two modes, chosen by the command's gesture:
  *
- * <p><b>Tap (←, short code 01–04):</b> one tap opens the microphone, the next tap closes it, so the rider talks
- * in intervals, with no delay. If a second tap follows within {@link #DOUBLE_AFTER_TAP_MS} (a double press for
- * Gemini / another command) or the long code within {@link #HOLD_AFTER_TAP_MS} (a hold), the toggle is undone
- * and the presses go to the other commands. Safety stop after {@link #MAX_TAP_TALK_MS}.</p>
+ * <p><b>Tap (←, short code 01–04):</b> a generic on/off button. Each tap asks PanaS to toggle its microphone
+ * (on → off → on…); PanaS owns the state, so it stays in step with the Edge and the Ride menu, and cutting
+ * the mic gives the music its full quality back. No time limit: the mic stays as the rider left it.
+ * If a second tap follows within {@link #DOUBLE_AFTER_TAP_MS} (a double press for Gemini / another command)
+ * or the long code within {@link #HOLD_AFTER_TAP_MS} (a hold), the toggle is undone (toggled back) and the
+ * presses go to the other commands.</p>
  *
  * <p><b>Hold (long code 07–0A):</b></p>
  *
@@ -35,7 +37,6 @@ final class PanasPttBridge {
     static final long MAX_TALK_MS = 60_000L;
     static final long DOUBLE_AFTER_TAP_MS = 600L;
     static final long HOLD_AFTER_TAP_MS = 1_500L;
-    static final long MAX_TAP_TALK_MS = 120_000L;
 
     /** Receives the events a tap turned out not to be (double press, hold) so the other commands still work. */
     interface Forward { void event(int code); }
@@ -59,7 +60,7 @@ final class PanasPttBridge {
     static boolean isTapCode(int code) { return code >= 0x01 && code <= 0x04; }
 
     /**
-     * Tap mode without delay: every tap opens/closes the microphone at once. If the tap turns out to be the
+     * Tap mode without delay: every tap toggles the PanaS microphone at once. If the tap turns out to be the
      * start of a double press or of a hold (the BTU sends the short code first), that toggle is undone and
      * the presses go to the other commands (e.g. Gemini). Worst case: a short open/close beep.
      */
@@ -74,21 +75,14 @@ final class PanasPttBridge {
         }
         if (code != target) { lastTapCode = -1; return false; }
         lastTapCode = code; lastTapAt = now;
-        toggleTap();
+        sendToggle("TAP");
         return true;
-    }
-
-    private void toggleTap() {
-        if (talking) { stop("TAP"); return; }
-        talking = true; triggerCode = -1;
-        handler.postDelayed(safetyTimeout, MAX_TAP_TALK_MS);
-        send(true, "TAP");
     }
 
     private void undoTap(String why) {
         lastTapCode = -1;
         FlightRecorder.log(context, "PANAS_PTT", "toque deshecho: " + why);
-        toggleTap();
+        sendToggle("UNDO");
     }
 
     private boolean hasDoublePress(int code) {
@@ -133,6 +127,22 @@ final class PanasPttBridge {
         handler.removeCallbacks(repeatTimeout);
         handler.removeCallbacks(safetyTimeout);
         send(false, reason);
+    }
+
+    /** Microphone on/off in PanaS (extra {@code toggle}); PanaS beeps once on, twice off. */
+    private void sendToggle(String reason) {
+        FlightRecorder.log(context, "PANAS_PTT", "MICRO ON/OFF " + reason);
+        for (String pkg : PANAS_PACKAGES) {
+            try {
+                Intent i = new Intent(ACTION).setPackage(pkg)
+                        .putExtra("toggle", true)
+                        .putExtra("source", "honda_btu")
+                        .addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+                context.sendBroadcast(i, null);
+            } catch (Throwable t) {
+                FlightRecorder.log(context, "PANAS_PTT", "error " + pkg + ": " + t.getClass().getSimpleName());
+            }
+        }
     }
 
     private void send(boolean pressed, String reason) {
