@@ -1,4 +1,22 @@
-# Honda Assist Bridge v0.4
+# Honda Assist Bridge
+
+## Versiones y control del micrófono de PanaS
+
+La rama `main` contiene la versión Android **0.12.1**. Las secciones de v0.4 que aparecen más abajo se conservan como documentación histórica.
+
+La integración más reciente del micrófono está en la rama [`snapshot/panas-v1.8.8-20261105`](../../tree/snapshot/panas-v1.8.8-20261105), versión **0.15.0-panas-micro-onoff**:
+
+- Cada toque del gesto configurado solicita a PanaS encender o apagar su micrófono.
+- PanaS mantiene el estado del micrófono; Honda Assist Bridge envía la orden desde los eventos de la piña Honda BTU.
+- El modo de toque conserva el estado hasta una nueva orden, sin límite temporal propio.
+- Si el gesto resulta ser una doble pulsación o una pulsación larga, el puente revierte el cambio del toque y reenvía los eventos a los otros comandos.
+- También existe un modo de pulsación larga para hablar, con parada de seguridad a los 60 segundos.
+
+Requiere una versión de PanaS compatible con estas órdenes. Este repositorio acredita la implementación del puente, no una nueva validación física del audio. La release pública sigue siendo **v0.12.1**; las ramas de integración contienen código posterior y no equivalen a un APK publicado.
+
+La rama [`panas-v1.8.8`](../../tree/panas-v1.8.8) conserva la iteración anterior **0.14.0**. Ambas ramas están disponibles en GitHub y GitLab.
+
+## Documentación histórica de v0.4
 
 Aplicación complementaria para Honda RoadSync. Escucha en paralelo los eventos BLE de `HONDA BTU` y permite invocar Gemini / Assistant desde un gesto configurable de la piña.
 
